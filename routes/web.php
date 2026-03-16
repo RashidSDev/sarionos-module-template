@@ -80,6 +80,7 @@ Route::middleware([
     'verify.token',
     'sync.workspace.from.core',
     'load.workspace.context',
+    'ensure.module.enabled',
 ])->group(function () {
     Route::get('/dashboard', function () {
         return view('dashboard');

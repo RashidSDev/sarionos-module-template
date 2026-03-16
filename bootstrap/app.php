@@ -30,6 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'verify.token' => VerifyTokenFromCore::class,
             'sync.workspace.from.core' => SyncWorkspaceFromCore::class,
             'load.workspace.context' => LoadWorkspaceContextFromCore::class,
+            'ensure.module.enabled' => \App\Http\Middleware\EnsureModuleEnabled::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
