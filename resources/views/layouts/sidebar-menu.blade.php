@@ -114,5 +114,5 @@
                 </div>
             </div>
         </a>
-  
+    </div>
 @endif
