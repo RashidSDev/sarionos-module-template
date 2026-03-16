@@ -3,9 +3,6 @@
         ['name' => 'Dashboard', 'route' => 'dashboard', 'icon' => 'home'],
     ];
 
-    $modules = collect(session('sarionos_workspace_modules', []))
-        ->filter(fn ($m) => isset($m['key'], $m['url']));
-
     $roleId  = session('sarionos_role_id');
     $isAdmin = in_array($roleId, [1, 2], true);
     $isOwner = (bool) session('sarionos_is_workspace_owner', false);
@@ -15,13 +12,14 @@
     @foreach ($mainMenu as $item)
         <a
             href="{{ route($item['route']) }}"
-            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-200 transition"
+            class="so-sidebar-link"
+            :class="open ? 'gap-3' : 'gap-0 justify-center'"
         >
-            @component('so::components.icons.' . $item['icon'], ['class' => 'w-5 h-5'])
+            @component('so::components.icons.' . $item['icon'], ['class' => 'so-sidebar-link-icon'])
             @endcomponent
 
             <span
-                class="text-sm font-medium whitespace-nowrap"
+                class="so-sidebar-link-label whitespace-nowrap"
                 x-show="open"
                 x-transition.opacity.duration.150ms
             >
@@ -31,56 +29,28 @@
     @endforeach
 </div>
 
-{{-- @if ($modules->isNotEmpty())
-    <div class="mt-6 pt-4 border-t border-gray-200">
+@if ($isOwner)
+    <div class="so-sidebar-section">
         <p
-            class="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide"
+            class="so-sidebar-section-title"
             x-show="open"
         >
-            Modules
+            Administration
         </p>
 
-        <div class="space-y-2">
-            @foreach ($modules as $module)
-                <a
-                    href="{{ $module['url'] }}"
-                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-200 transition"
-                >
-                    @component('so::components.icons.squares-2x2', ['class' => 'w-5 h-5 text-gray-500'])
-                    @endcomponent
-
-                    <span
-                        class="text-sm font-medium capitalize"
-                        x-show="open"
-                        x-transition.opacity.duration.150ms
-                    >
-                        {{ $module['key'] }}
-                    </span>
-                </a>
-            @endforeach
-        </div>
-    </div>
-@endif --}}
-
-{{-- ========================================================= --}}
-{{-- WORKSPACE ADMINISTRATION --}}
-{{-- ========================================================= --}}
-@if($isOwner)
-    <div class="mt-6 pt-4 border-t border-gray-200">
-        <p class="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide"
-           x-show="open">
-            ADMINISTRATION
-        </p>        
-
-        {{-- Add Settings Section for Admin/Owner --}}
-        <a href="" 
-           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-200 transition">
-            @component('so::components.icons.settings', ['class' => 'w-5 h-5 text-gray-500'])
+        <a
+            href="#"
+            class="so-sidebar-link-disabled"
+            :class="open ? 'gap-3' : 'gap-0 justify-center'"
+        >
+            @component('so::components.icons.settings', ['class' => 'so-sidebar-link-icon so-sidebar-link-icon-disabled'])
             @endcomponent
 
-            <span class="text-sm font-medium"
-                  x-show="open"
-                  x-transition.opacity.duration.150ms>
+            <span
+                class="so-sidebar-link-label"
+                x-show="open"
+                x-transition.opacity.duration.150ms
+            >
                 Settings
             </span>
         </a>
@@ -88,27 +58,30 @@
 @endif
 
 @if ($isAdmin)
-    <div class="mt-6 pt-4 border-t border-gray-200">
-       <p
-            class="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide"
+    <div class="so-sidebar-section">
+        <p
+            class="so-sidebar-section-title"
             x-show="open"
         >
             Hub
         </p>
 
-        <a href="https://app.dev.sarionos.com/dashboard?refresh_context=1"
-        class="flex items-center p-3 rounded-lg text-gray-800 hover:bg-gray-100 transition"
-        :class="open ? 'gap-3' : 'gap-0'">
+        <a
+            href="https://app.dev.sarionos.com/dashboard?refresh_context=1"
+            class="so-sidebar-feature-link"
+            :class="open ? 'gap-3' : 'gap-0 justify-center'"
+        >
+            <x-so::icons.layout-dashboard class="w-6 h-6 text-gray-600 shrink-0" />
 
-            <x-so::icons.layout-dashboard class="w-6 h-6 text-gray-600" />
-
-            <div x-show="open"
+            <div
+                x-show="open"
                 x-transition.opacity.duration.150ms
-                class="flex flex-col leading-tight">
-                <span class="text-sm font-semibold">
+                class="so-sidebar-feature-body"
+            >
+                <span class="so-sidebar-feature-title">
                     Workspace Hub
                 </span>
-                <div class="text-xs text-gray-400 leading-tight">
+                <div class="so-sidebar-feature-meta">
                     <div>Main workspace</div>
                     <div>surface</div>
                 </div>
