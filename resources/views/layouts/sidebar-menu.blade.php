@@ -89,35 +89,30 @@
 
 @if ($isAdmin)
     <div class="mt-6 pt-4 border-t border-gray-200">
-        <p
+       <p
             class="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide"
             x-show="open"
         >
-            System
+            Hub
         </p>
 
-            <a href="https://app.dev.sarionos.com/dashboard?refresh_context=1"
-            class="flex items-center p-3 rounded-lg
-                    text-gray-800 hover:bg-gray-100 transition"
-            :class="open ? 'gap-3' : 'gap-0'">
+        <a href="https://app.dev.sarionos.com/dashboard?refresh_context=1"
+        class="flex items-center p-3 rounded-lg text-gray-800 hover:bg-gray-100 transition"
+        :class="open ? 'gap-3' : 'gap-0'">
 
-                {{-- ICON (sarionos-ui) --}}
-                <x-so::icons.layout-dashboard class="w-6 h-6 text-gray-600" />
+            <x-so::icons.layout-dashboard class="w-6 h-6 text-gray-600" />
 
-                {{-- LABEL --}}
-                <div x-show="open"
-                    x-transition.opacity.duration.150ms
-                    class="flex flex-col leading-tight">
-                    <span class="text-sm font-semibold">
-                        SarionOS Web
-                    </span>
-                    <div class="text-xs text-gray-400 leading-tight">
-                        <div>Main operational</div>
-                        <div>surface</div>
-                    </div>
+            <div x-show="open"
+                x-transition.opacity.duration.150ms
+                class="flex flex-col leading-tight">
+                <span class="text-sm font-semibold">
+                    Workspace Hub
+                </span>
+                <div class="text-xs text-gray-400 leading-tight">
+                    <div>Main workspace</div>
+                    <div>surface</div>
                 </div>
-            </a>
-
-        </div>
+            </div>
+        </a>
   
 @endif
