@@ -9,8 +9,12 @@ class EnsureModuleEnabled
 {
     public function handle(Request $request, Closure $next)
     {
+        $moduleKey = config('sarionos.module_key');
+
         $modules = collect(session('sarionos_workspace_modules', []));
-        $enabled = $modules->contains(fn ($m) => ($m['key'] ?? null) === 'Template');
+        $enabled = $modules->contains(
+            fn ($m) => ($m['key'] ?? null) === $moduleKey
+        );
 
         if ($enabled) {
             return $next($request);
