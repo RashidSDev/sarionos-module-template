@@ -1,4 +1,4 @@
-<x-so-layout title="Module Template Dashboard">
+<x-app-layout title="Module Template Dashboard">
     <x-slot name="assets">
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </x-slot>
@@ -60,4 +60,4 @@
             </a>
         </div>
     </div>
-</x-so-layout>
+</x-app-layout>
