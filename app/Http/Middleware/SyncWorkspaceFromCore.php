@@ -4,63 +4,52 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class SyncWorkspaceFromCore
 {
     public function handle(Request $request, Closure $next)
     {
-        if (! $request->boolean('refresh_context')) {
+        if ($request->is('logout') || $request->is('auth/callback')) {
             return $next($request);
         }
 
-        Log::warning('[MODULE][SyncWorkspaceFromCore] TRIGGERED', [
-            'url' => $request->fullUrl(),
-        ]);
+        $activeWorkspaceUuid = (string) session('sarionos_active_workspace_uuid', '');
 
-        $token = session('sarionos_token');
-
-        if (! $token) {
+        if ($activeWorkspaceUuid === '') {
             return redirect('/logout');
         }
 
-        $coreUrl = rtrim(env('SARIONOS_CORE_URL'), '/');
+        $contextWorkspaceUuid = (string) session('sarionos_context_workspace_uuid', '');
 
-        $response = Http::withToken($token)
-            ->acceptJson()
-            ->timeout(5)
-            ->connectTimeout(3)
-            ->get("$coreUrl/api/me/workspace");
+        $workspaceChanged = $contextWorkspaceUuid !== $activeWorkspaceUuid;
+        $manualRefresh = $request->boolean('refresh_context');
 
-        Log::warning('[MODULE][SyncWorkspaceFromCore] CORE RESPONSE', [
-            'status' => $response->status(),
-            'body'   => $response->json(),
-        ]);
+        if ($workspaceChanged || $manualRefresh) {
+            session()->forget([
+                'sarionos_workspace_users',
+                'sarionos_workspace_modules',
+                'sarionos_user_workspaces',
+            ]);
 
-        if (! $response->ok()) {
-            if (in_array($response->status(), [401, 403], true)) {
-                return redirect('/logout');
-            }
+            session([
+                'force_refresh_users' => true,
+                'force_refresh_modules' => true,
+                'force_refresh_context' => true,
+                'sarionos_context_workspace_uuid' => $activeWorkspaceUuid,
+            ]);
 
-            abort(403, 'Unable to sync workspace from Core.');
+            Log::info('[MODULE][SyncWorkspaceFromCore] LOCAL CONTEXT MARKED FOR REFRESH', [
+                'active_workspace_uuid' => $activeWorkspaceUuid,
+                'context_workspace_uuid' => $contextWorkspaceUuid,
+                'refresh_context' => $manualRefresh,
+                'reasons' => array_values(array_filter([
+                    $workspaceChanged ? 'context_workspace_mismatch' : null,
+                    $manualRefresh ? 'request_refresh_context' : null,
+                ])),
+            ]);
         }
 
-        session([
-            'sarionos_active_workspace_uuid' => $response['workspace_uuid'],
-            'sarionos_active_workspace_name' => $response['workspace_name'],
-        ]);
-
-        session()->forget([
-            'sarionos_workspace_users',
-            'sarionos_workspace_modules',
-            'sarionos_user_workspaces',
-        ]);
-
-        session()->put('force_refresh_users', true);
-        session()->put('force_refresh_modules', true);
-        session()->put('force_refresh_context', true);
-
-        return redirect($request->url());
+        return $next($request);
     }
 }

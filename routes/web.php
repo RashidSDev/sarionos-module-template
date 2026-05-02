@@ -72,7 +72,11 @@ Route::post('/workspace/switch', function (Request $request) {
         'force_refresh_context' => true,
     ]);
 
-    return back();
+    $self = rtrim(env('SARIONOS_SELF_URL'), '/');
+
+    return redirect()->away(
+        $core . '/login?redirect=' . urlencode($self . '/auth/callback?reason=workspace_switched')
+    );
 })->middleware('verify.token')->name('workspace.switch');
 
 
