@@ -31,6 +31,6 @@ class EnsureModuleEnabled
             'sarionos_core_alive_last_ok',
         ]);
 
-        return redirect()->away('https://app.dev.sarionos.com/dashboard?refresh_context=1');
+        return redirect()->away(rtrim(config('sarionos.web_url'), '/') . '/dashboard?refresh_context=1');
     }
 }

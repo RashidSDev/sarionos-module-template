@@ -20,13 +20,13 @@ Route::get('/logout', function (Request $request) {
     session()->flush();
 
     return redirect()->away(
-        rtrim(env('SARIONOS_CORE_URL'), '/') . '/logout?redirect=' . urlencode(
-            rtrim(env('SARIONOS_SELF_URL'), '/') . '/auth/callback'
+        rtrim(config('sarionos.core_url'), '/') . '/logout?redirect=' . urlencode(
+            rtrim(config('sarionos.self_url'), '/') . '/auth/callback'
         )
     )
-    ->withCookie(cookie()->forget('sarionos_sso', '/', '.dev.sarionos.com'))
-    ->withCookie(cookie()->forget(env('SESSION_COOKIE', 'sarionos_template_session'), '/', '.dev.sarionos.com'))
-    ->withCookie(cookie()->forget('XSRF-TOKEN', '/', '.dev.sarionos.com'));
+    ->withCookie(cookie()->forget('sarionos_sso', '/', config('sarionos.cookie_domain')))
+    ->withCookie(cookie()->forget(env('SESSION_COOKIE', 'sarionos_template_session'), '/', config('sarionos.cookie_domain')))
+    ->withCookie(cookie()->forget('XSRF-TOKEN', '/', config('sarionos.cookie_domain')));
 })->name('logout');
 
 Route::post('/workspace/switch', function (Request $request) {
@@ -39,7 +39,7 @@ Route::post('/workspace/switch', function (Request $request) {
         return redirect('/logout');
     }
 
-    $core = rtrim(env('SARIONOS_CORE_URL'), '/');
+    $core = rtrim(config('sarionos.core_url'), '/');
 
     try {
         $res = \Illuminate\Support\Facades\Http::withToken($token)
@@ -72,7 +72,7 @@ Route::post('/workspace/switch', function (Request $request) {
         'force_refresh_context' => true,
     ]);
 
-    $self = rtrim(env('SARIONOS_SELF_URL'), '/');
+    $self = rtrim(config('sarionos.self_url'), '/');
 
     return redirect()->away(
         $core . '/login?redirect=' . urlencode($self . '/auth/callback?reason=workspace_switched')

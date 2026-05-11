@@ -26,7 +26,7 @@ return [
 
     'path' => env('SESSION_PATH', '/'),
 
-    'domain' => env('SESSION_DOMAIN', '.dev.sarionos.com'),
+    'domain' => env('SESSION_DOMAIN', env('SARIONOS_COOKIE_DOMAIN', '.sarionos.com')),
 
     'secure' => true,
 

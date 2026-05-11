@@ -74,10 +74,10 @@ class CallbackController extends Controller
     {
         session()->flush();
 
-        $core = rtrim(env('SARIONOS_CORE_URL'), '/');
-        $self = rtrim(env('SARIONOS_SELF_URL'), '/');
+        $core = rtrim(config('sarionos.core_url'), '/');
+        $self = rtrim(config('sarionos.self_url'), '/');
 
         return redirect()->away($core . '/logout?redirect=' . urlencode($self . '/auth/callback'))
-            ->withCookie(cookie()->forget('sarionos_sso', '/', '.dev.sarionos.com'));
+            ->withCookie(cookie()->forget('sarionos_sso', '/', config('sarionos.cookie_domain')));
     }
 }

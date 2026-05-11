@@ -67,7 +67,7 @@
         </p>
 
         <a
-            href="https://app.dev.sarionos.com/dashboard?refresh_context=1"
+            href="{{ rtrim(config('sarionos.web_url'), '/') }}/dashboard?refresh_context=1"
             class="so-sidebar-feature-link"
             :class="open ? 'gap-3' : 'gap-0 justify-center'"
         >
