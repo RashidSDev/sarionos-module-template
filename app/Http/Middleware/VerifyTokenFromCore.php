@@ -35,6 +35,8 @@ class VerifyTokenFromCore
             }
         }
 
+        $workspaceContext = $this->workspaceContextPayload($request);
+
         if (
             session('sarionos_logged_in') === true &&
             session()->has('sarionos_token') &&
@@ -47,6 +49,8 @@ class VerifyTokenFromCore
 
                 $this->syncSessionFromCookiePayload($payload);
             }
+
+            $this->syncWorkspaceContextFromCookie($workspaceContext);
 
             $alive = $this->coreTokenIsAlive(session('sarionos_token'));
 
@@ -69,6 +73,7 @@ class VerifyTokenFromCore
             }
 
             $this->startSessionFromCookiePayload($payload);
+            $this->syncWorkspaceContextFromCookie($workspaceContext);
 
             return $next($request);
         }
@@ -99,9 +104,9 @@ class VerifyTokenFromCore
             'sarionos_user_name'             => $userName,
             'sarionos_user_uuid'             => $payload['user_uuid'],
             'sarionos_role_id'               => $payload['role_id'],
-            'sarionos_active_workspace_uuid' => $payload['active_workspace_uuid'] ?? null,
-            'sarionos_active_workspace_name' => $payload['active_workspace_name'] ?? null,
-            'sarionos_is_workspace_owner'    => (bool) ($payload['is_workspace_owner'] ?? false),
+            'force_refresh_context'          => true,
+            'force_refresh_users'            => true,
+            'force_refresh_modules'          => true,
         ]);
     }
 
@@ -110,15 +115,7 @@ class VerifyTokenFromCore
         $cookieToken = (string) ($payload['token'] ?? '');
         $sessionToken = (string) session('sarionos_token', '');
 
-        $cookieWorkspaceUuid = (string) ($payload['active_workspace_uuid'] ?? '');
-        $cookieWorkspaceName = $payload['active_workspace_name'] ?? null;
-
-        $sessionWorkspaceUuid = (string) session('sarionos_active_workspace_uuid', '');
-
         $tokenChanged = $cookieToken !== '' && $sessionToken !== $cookieToken;
-        $workspaceChanged = $cookieWorkspaceUuid !== ''
-            && $sessionWorkspaceUuid !== ''
-            && $sessionWorkspaceUuid !== $cookieWorkspaceUuid;
 
         if ($tokenChanged) {
             session()->forget([
@@ -130,37 +127,73 @@ class VerifyTokenFromCore
             Log::info('[MODULE][VerifyTokenFromCore] token changed from shared SSO cookie');
         }
 
-        if ($workspaceChanged) {
-            session()->forget([
-                'sarionos_workspace_users',
-                'sarionos_workspace_modules',
-                'sarionos_user_workspaces',
-                'sarionos_context_workspace_uuid',
-                'sarionos_core_alive_checked_at',
-                'sarionos_core_alive_last_ok',
-                'sarionos_token_expires_at',
-            ]);
+        session([
+            'sarionos_token'     => $cookieToken,
+            'sarionos_user_name' => $payload['user_name'] ?? ($payload['name'] ?? session('sarionos_user_name')),
+            'sarionos_user_uuid' => $payload['user_uuid'],
+            'sarionos_role_id'   => $payload['role_id'],
+        ]);
+    }
 
-            session([
-                'force_refresh_context' => true,
-                'force_refresh_users'   => true,
-                'force_refresh_modules' => true,
-            ]);
-
-            Log::info('[MODULE][VerifyTokenFromCore] workspace changed from shared SSO cookie', [
-                'old_workspace_uuid' => $sessionWorkspaceUuid,
-                'new_workspace_uuid' => $cookieWorkspaceUuid,
-            ]);
+    private function workspaceContextPayload(Request $request): ?array
+    {
+        if (! $request->hasCookie('sarionos_workspace_context')) {
+            return null;
         }
 
+        try {
+            $payload = json_decode(Crypt::decrypt($request->cookie('sarionos_workspace_context')), true);
+        } catch (\Throwable $e) {
+            Log::warning('[MODULE][VerifyTokenFromCore] invalid sarionos_workspace_context cookie', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
+
+        return is_array($payload) ? $payload : null;
+    }
+
+    private function syncWorkspaceContextFromCookie(?array $payload): void
+    {
+        if (! is_array($payload)) {
+            return;
+        }
+
+        $cookieWorkspaceUuid = (string) ($payload['workspace_uuid'] ?? '');
+        $cookieWorkspaceName = $payload['workspace_name'] ?? null;
+
+        if ($cookieWorkspaceUuid === '') {
+            return;
+        }
+
+        $sessionWorkspaceUuid = (string) session('sarionos_active_workspace_uuid', '');
+
+        if ($sessionWorkspaceUuid !== '' && $sessionWorkspaceUuid === $cookieWorkspaceUuid) {
+            return;
+        }
+
+        session()->forget([
+            'sarionos_workspace_users',
+            'sarionos_workspace_modules',
+            'sarionos_user_workspaces',
+            'sarionos_context_workspace_uuid',
+            'sarionos_core_alive_checked_at',
+            'sarionos_core_alive_last_ok',
+            'sarionos_token_expires_at',
+        ]);
+
         session([
-            'sarionos_token'                 => $cookieToken,
-            'sarionos_user_name'             => $payload['user_name'] ?? ($payload['name'] ?? session('sarionos_user_name')),
-            'sarionos_user_uuid'             => $payload['user_uuid'],
-            'sarionos_role_id'               => $payload['role_id'],
-            'sarionos_active_workspace_uuid' => $cookieWorkspaceUuid ?: session('sarionos_active_workspace_uuid'),
-            'sarionos_active_workspace_name' => $cookieWorkspaceName ?: session('sarionos_active_workspace_name'),
-            'sarionos_is_workspace_owner'    => (bool) ($payload['is_workspace_owner'] ?? session('sarionos_is_workspace_owner', false)),
+            'sarionos_active_workspace_uuid' => $cookieWorkspaceUuid,
+            'sarionos_active_workspace_name' => $cookieWorkspaceName,
+            'force_refresh_context'          => true,
+            'force_refresh_users'            => true,
+            'force_refresh_modules'          => true,
+        ]);
+
+        Log::info('[MODULE][VerifyTokenFromCore] workspace changed from workspace context cookie', [
+            'old_workspace_uuid' => $sessionWorkspaceUuid,
+            'new_workspace_uuid' => $cookieWorkspaceUuid,
         ]);
     }
 
