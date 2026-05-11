@@ -6,28 +6,80 @@
     $roleId  = session('sarionos_role_id');
     $isAdmin = in_array($roleId, [1, 2], true);
     $isOwner = (bool) session('sarionos_is_workspace_owner', false);
+
+    $navigationItems = collect(session('sarionos_navigation_items', []));
+    $hasDynamicNavigation = $navigationItems->isNotEmpty();
+    $navigationGroups = $navigationItems->groupBy(fn ($item) => $item['group_label'] ?? 'Navigation');
 @endphp
 
-<div class="space-y-2">
-    @foreach ($mainMenu as $item)
-        <a
-            href="{{ route($item['route']) }}"
-            class="so-sidebar-link"
-            :class="open ? 'gap-3' : 'gap-0 justify-center'"
-        >
-            @component('so::components.icons.' . $item['icon'], ['class' => 'so-sidebar-link-icon'])
-            @endcomponent
+@if ($hasDynamicNavigation)
+    @foreach ($navigationGroups as $groupLabel => $items)
+        <div class="{{ $loop->first ? 'space-y-2' : 'so-sidebar-section' }}">
+            @unless($loop->first)
+                <p
+                    class="so-sidebar-section-title"
+                    x-show="open"
+                >
+                    {{ $groupLabel }}
+                </p>
+            @endunless
 
-            <span
-                class="so-sidebar-link-label whitespace-nowrap"
-                x-show="open"
-                x-transition.opacity.duration.150ms
-            >
-                {{ $item['name'] }}
-            </span>
-        </a>
+            @foreach ($items as $item)
+                @php
+                    $url = (string) ($item['url'] ?? '#');
+                    $href = \Illuminate\Support\Str::startsWith($url, ['http://', 'https://'])
+                        ? $url
+                        : url($url);
+
+                    $icon = $item['icon'] ?: 'squares-2x2';
+                    $iconView = 'so::components.icons.' . $icon;
+
+                    if (! view()->exists($iconView)) {
+                        $iconView = 'so::components.icons.squares-2x2';
+                    }
+                @endphp
+
+                <a
+                    href="{{ $href }}"
+                    class="so-sidebar-link"
+                    :class="open ? 'gap-3' : 'gap-0 justify-center'"
+                >
+                    @component($iconView, ['class' => 'so-sidebar-link-icon'])
+                    @endcomponent
+
+                    <span
+                        class="so-sidebar-link-label whitespace-nowrap"
+                        x-show="open"
+                        x-transition.opacity.duration.150ms
+                    >
+                        {{ $item['label'] ?? 'Untitled' }}
+                    </span>
+                </a>
+            @endforeach
+        </div>
     @endforeach
-</div>
+@else
+    <div class="space-y-2">
+        @foreach ($mainMenu as $item)
+            <a
+                href="{{ route($item['route']) }}"
+                class="so-sidebar-link"
+                :class="open ? 'gap-3' : 'gap-0 justify-center'"
+            >
+                @component('so::components.icons.' . $item['icon'], ['class' => 'so-sidebar-link-icon'])
+                @endcomponent
+
+                <span
+                    class="so-sidebar-link-label whitespace-nowrap"
+                    x-show="open"
+                    x-transition.opacity.duration.150ms
+                >
+                    {{ $item['name'] }}
+                </span>
+            </a>
+        @endforeach
+    </div>
+@endif
 
 @if ($isOwner)
     <div class="so-sidebar-section">

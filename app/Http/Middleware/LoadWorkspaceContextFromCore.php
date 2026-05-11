@@ -27,6 +27,7 @@ class LoadWorkspaceContextFromCore
             session()->has('sarionos_workspace_users') &&
             session()->has('sarionos_workspace_modules') &&
             session()->has('sarionos_user_workspaces') &&
+            session()->has('sarionos_navigation_items') &&
             ! $forceRefresh
         ) {
             return $next($request);
@@ -105,12 +106,30 @@ class LoadWorkspaceContextFromCore
             abort(403, 'Unable to load modules from Core.');
         }
 
-        $workspacesJson = $workspacesResponse->json();
-        $modulesJson    = $modulesResponse->json();
+        $navigationResponse = Http::withToken($token)
+            ->acceptJson()
+            ->timeout(5)
+            ->connectTimeout(3)
+            ->get("$coreUrl/api/navigation/sidebar", [
+                'app_key' => config('sarionos.module_key'),
+            ]);
 
-        $workspacesList = $workspacesJson['workspaces'] ?? [];
-        $modulesList    = $modulesJson['modules'] ?? [];
-        $isOwner        = (bool) ($modulesJson['is_owner'] ?? false);
+        if (! $navigationResponse->ok()) {
+            if (in_array($navigationResponse->status(), [401, 403], true)) {
+                return redirect('/logout');
+            }
+
+            abort(403, 'Unable to load navigation from Core.');
+        }
+
+        $workspacesJson  = $workspacesResponse->json();
+        $modulesJson     = $modulesResponse->json();
+        $navigationJson  = $navigationResponse->json();
+
+        $workspacesList  = $workspacesJson['workspaces'] ?? [];
+        $modulesList     = $modulesJson['modules'] ?? [];
+        $navigationItems = $navigationJson['navigation'] ?? [];
+        $isOwner         = (bool) ($modulesJson['is_owner'] ?? false);
 
         session([
             'sarionos_is_workspace_owner' => $isOwner,
@@ -124,6 +143,7 @@ class LoadWorkspaceContextFromCore
                 ->values()
                 ->all(),
             'sarionos_user_workspaces'    => $workspacesList,
+            'sarionos_navigation_items'    => $navigationItems,
         ]);
 
         Log::info('[MODULE][LoadWorkspaceContextFromCore] CONTEXT STORED', [
@@ -132,6 +152,7 @@ class LoadWorkspaceContextFromCore
             'users'      => count($usersResponse->json()),
             'modules'    => count($modulesList),
             'workspaces' => count($workspacesList),
+            'navigation' => count($navigationItems),
         ]);
 
         return $next($request);
