@@ -16,10 +16,7 @@
     @foreach ($navigationGroups as $groupLabel => $items)
         <div class="{{ $loop->first ? 'space-y-2' : 'so-sidebar-section' }}">
             @unless($loop->first)
-                <p
-                    class="so-sidebar-section-title"
-                    x-show="open"
-                >
+                <p class="so-sidebar-section-title" x-show="open">
                     {{ $groupLabel }}
                 </p>
             @endunless
@@ -37,11 +34,13 @@
                     if (! view()->exists($iconView)) {
                         $iconView = 'so::components.icons.squares-2x2';
                     }
+
+                    $isActive = rtrim($href, '/') === rtrim(url()->current(), '/');
                 @endphp
 
                 <a
                     href="{{ $href }}"
-                    class="so-sidebar-link"
+                    class="so-sidebar-link {{ $isActive ? 'so-sidebar-link-active' : '' }}"
                     :class="open ? 'gap-3' : 'gap-0 justify-center'"
                 >
                     @component($iconView, ['class' => 'so-sidebar-link-icon'])
@@ -63,7 +62,7 @@
         @foreach ($mainMenu as $item)
             <a
                 href="{{ route($item['route']) }}"
-                class="so-sidebar-link"
+                class="so-sidebar-link {{ request()->routeIs($item['route']) ? 'so-sidebar-link-active' : '' }}"
                 :class="open ? 'gap-3' : 'gap-0 justify-center'"
             >
                 @component('so::components.icons.' . $item['icon'], ['class' => 'so-sidebar-link-icon'])
@@ -83,27 +82,20 @@
 
 @if ($isOwner)
     <div class="so-sidebar-section">
-        <p
-            class="so-sidebar-section-title"
-            x-show="open"
-        >
+        <p class="so-sidebar-section-title" x-show="open">
             Administration
         </p>
 
         <a
-            href="#"
-            class="so-sidebar-link-disabled"
+            href="{{ route('template.admin.access-routes.index') }}"
+            class="so-sidebar-link {{ request()->routeIs('template.admin.access-routes.*') ? 'so-sidebar-link-active' : '' }}"
             :class="open ? 'gap-3' : 'gap-0 justify-center'"
         >
-            @component('so::components.icons.settings', ['class' => 'so-sidebar-link-icon so-sidebar-link-icon-disabled'])
+            @component('so::components.icons.shield-check', ['class' => 'so-sidebar-link-icon so-sidebar-link-icon-muted'])
             @endcomponent
 
-            <span
-                class="so-sidebar-link-label"
-                x-show="open"
-                x-transition.opacity.duration.150ms
-            >
-                Settings
+            <span class="so-sidebar-link-label" x-show="open" x-transition.opacity.duration.150ms>
+                Access Routes
             </span>
         </a>
     </div>
@@ -111,10 +103,7 @@
 
 @if ($isAdmin)
     <div class="so-sidebar-section">
-        <p
-            class="so-sidebar-section-title"
-            x-show="open"
-        >
+        <p class="so-sidebar-section-title" x-show="open">
             Hub
         </p>
 
@@ -125,11 +114,7 @@
         >
             <x-so::icons.layout-dashboard class="w-6 h-6 text-gray-600 shrink-0" />
 
-            <div
-                x-show="open"
-                x-transition.opacity.duration.150ms
-                class="so-sidebar-feature-body"
-            >
+            <div x-show="open" x-transition.opacity.duration.150ms class="so-sidebar-feature-body">
                 <span class="so-sidebar-feature-title">
                     Workspace Hub
                 </span>

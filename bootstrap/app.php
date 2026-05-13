@@ -31,6 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'sync.workspace.from.core' => SyncWorkspaceFromCore::class,
             'load.workspace.context' => LoadWorkspaceContextFromCore::class,
             'ensure.module.enabled' => \App\Http\Middleware\EnsureModuleEnabled::class,
+            'access' => \App\Http\Middleware\RequireAccessKey::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

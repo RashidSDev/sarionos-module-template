@@ -28,4 +28,9 @@ return [
 
     'cookie_domain' => env('SARIONOS_COOKIE_DOMAIN', env('SESSION_DOMAIN', '.sarionos.com')),
 
+    'internal_service_token' => env(
+        'SARIONOS_INTERNAL_SERVICE_TOKEN',
+        env('SARIONOS_INTERNAL_PUBLIC_ACCESS_TOKEN')
+    ),
+
 ];

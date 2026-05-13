@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\CallbackController;
+use App\Http\Controllers\Admin\AccessRouteRegistryController;
 
 Route::get('/whoami', function () {
     return 'MODULE TEMPLATE';
@@ -85,8 +86,15 @@ Route::middleware([
     'sync.workspace.from.core',
     'load.workspace.context',
     'ensure.module.enabled',
+    'access',
 ])->group(function () {
     Route::get('/dashboard', function () {
         return view('dashboard');
     })->name('dashboard');
+
+    Route::get('/admin/access-routes', [AccessRouteRegistryController::class, 'index'])
+        ->name('template.admin.access-routes.index');
+
+    Route::post('/admin/access-routes/register', [AccessRouteRegistryController::class, 'register'])
+        ->name('template.admin.access-routes.register');
 });

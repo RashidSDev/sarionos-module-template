@@ -30,6 +30,10 @@ class SyncWorkspaceFromCore
                 'sarionos_workspace_users',
                 'sarionos_workspace_modules',
                 'sarionos_user_workspaces',
+                'sarionos_navigation_items',
+                'sarionos_allowed_access_keys',
+                'sarionos_access_route_rules',
+                'sarionos_context_version',
             ]);
 
             session([

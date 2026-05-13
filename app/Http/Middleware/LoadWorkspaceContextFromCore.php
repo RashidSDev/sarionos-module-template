@@ -23,11 +23,40 @@ class LoadWorkspaceContextFromCore
 
         $coreUrl = rtrim(env('SARIONOS_CORE_URL'), '/');
 
-        if (
+        $hasCachedContext =
             session()->has('sarionos_workspace_users') &&
             session()->has('sarionos_workspace_modules') &&
             session()->has('sarionos_user_workspaces') &&
             session()->has('sarionos_navigation_items') &&
+            session()->has('sarionos_allowed_access_keys') &&
+            session()->has('sarionos_access_route_rules') &&
+            session()->has('sarionos_context_version');
+
+        $contextVersionResponse = Http::withToken($token)
+            ->acceptJson()
+            ->timeout(5)
+            ->connectTimeout(3)
+            ->get("$coreUrl/api/context/version", [
+                'app_key' => config('sarionos.module_key'),
+            ]);
+
+        if (! $contextVersionResponse->ok()) {
+            if (in_array($contextVersionResponse->status(), [401, 403], true)) {
+                return redirect('/logout');
+            }
+
+            if ($hasCachedContext && ! $forceRefresh) {
+                return $next($request);
+            }
+
+            abort(403, 'Unable to load context version from Core.');
+        }
+
+        $contextVersion = (string) $contextVersionResponse->json('version', '');
+
+        if (
+            $hasCachedContext &&
+            session('sarionos_context_version') === $contextVersion &&
             ! $forceRefresh
         ) {
             return $next($request);
@@ -129,6 +158,8 @@ class LoadWorkspaceContextFromCore
         $workspacesList  = $workspacesJson['workspaces'] ?? [];
         $modulesList     = $modulesJson['modules'] ?? [];
         $navigationItems = $navigationJson['navigation'] ?? [];
+        $allowedAccessKeys = $navigationJson['allowed_access_keys'] ?? [];
+        $accessRouteRules = $navigationJson['access_route_rules'] ?? [];
         $isOwner         = (bool) ($modulesJson['is_owner'] ?? false);
 
         session([
@@ -144,6 +175,9 @@ class LoadWorkspaceContextFromCore
                 ->all(),
             'sarionos_user_workspaces'    => $workspacesList,
             'sarionos_navigation_items'    => $navigationItems,
+            'sarionos_allowed_access_keys'  => $allowedAccessKeys,
+            'sarionos_access_route_rules'   => $accessRouteRules,
+            'sarionos_context_version'     => $contextVersion,
         ]);
 
         Log::info('[MODULE][LoadWorkspaceContextFromCore] CONTEXT STORED', [
@@ -153,6 +187,9 @@ class LoadWorkspaceContextFromCore
             'modules'    => count($modulesList),
             'workspaces' => count($workspacesList),
             'navigation' => count($navigationItems),
+            'allowed_access_keys' => count($allowedAccessKeys),
+            'access_route_rules' => count($accessRouteRules),
+            'context_version' => $contextVersion,
         ]);
 
         return $next($request);
