@@ -1,0 +1,15 @@
+[Unit]
+Description=SarionOS Module Queue Worker
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=__APP_DIR__
+ExecStart=/usr/bin/php artisan queue:work database --queue=__MODULE_KEY__,default --sleep=3 --tries=3 --timeout=120
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\CallbackController;
 use App\Http\Controllers\Admin\AccessRouteRegistryController;
+use App\Http\Controllers\ModuleSystemCheckController;
 
 Route::get('/whoami', function () {
     return 'MODULE TEMPLATE';
@@ -91,6 +92,12 @@ Route::middleware([
     Route::get('/dashboard', function () {
         return view('dashboard');
     })->name('dashboard');
+
+    Route::get('/admin/system-check', [ModuleSystemCheckController::class, 'index'])
+        ->name('template.admin.system-check');
+
+    Route::post('/admin/system-check/queue-heartbeat', [ModuleSystemCheckController::class, 'heartbeat'])
+        ->name('template.admin.system-check.heartbeat');
 
     Route::get('/admin/access-routes', [AccessRouteRegistryController::class, 'index'])
         ->name('template.admin.access-routes.index');
