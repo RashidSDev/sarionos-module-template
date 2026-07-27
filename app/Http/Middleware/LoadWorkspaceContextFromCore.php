@@ -165,14 +165,9 @@ class LoadWorkspaceContextFromCore
         session([
             'sarionos_is_workspace_owner' => $isOwner,
             'sarionos_workspace_users'    => $usersResponse->json(),
-            'sarionos_workspace_modules'  => collect($modulesList)
-                ->map(fn ($m) => [
-                    'uuid' => $m['uuid'],
-                    'key'  => $m['key'],
-                    'url'  => $m['url'],
-                ])
-                ->values()
-                ->all(),
+            'sarionos_workspace_modules' => $this->normalizeWorkspaceModules(
+                $modulesList
+            ),
             'sarionos_user_workspaces'    => $workspacesList,
             'sarionos_navigation_items'    => $navigationItems,
             'sarionos_allowed_access_keys'  => $allowedAccessKeys,
@@ -194,4 +189,33 @@ class LoadWorkspaceContextFromCore
 
         return $next($request);
     }
+
+    /**
+     * Preserve Core's shared module presentation contract in the local
+     * workspace session while retaining legacy payload compatibility.
+     */
+    private function normalizeWorkspaceModules(array $modules): array
+    {
+        return collect($modules)
+            ->filter(fn ($module) => is_array($module))
+            ->map(fn (array $module): array => [
+                'uuid' => $module['uuid'] ?? null,
+                'key' => $module['key'] ?? null,
+                'name' => $module['name'] ?? null,
+                'url' => $module['url'] ?? null,
+                'presentation' => is_array(
+                    $module['presentation'] ?? null
+                )
+                    ? $module['presentation']
+                    : null,
+            ])
+            ->filter(
+                fn (array $module): bool =>
+                    ! empty($module['uuid'])
+                    && ! empty($module['key'])
+            )
+            ->values()
+            ->all();
+    }
+
 }
