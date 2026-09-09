@@ -37,10 +37,6 @@ class CallbackController extends Controller
         $roleId   = $payload['role_id'] ?? null;
         $userName = $payload['user_name'] ?? ($payload['name'] ?? null);
 
-        $activeWorkspaceUuid = $payload['active_workspace_uuid'] ?? null;
-        $activeWorkspaceName = $payload['active_workspace_name'] ?? null;
-        $isOwnerBool         = (bool) ($payload['is_workspace_owner'] ?? false);
-
         if (! $token || ! $userUuid || ! $roleId || ! $userName) {
             \Log::warning('MODULE CALLBACK → missing required payload fields', [
                 'has_token'    => (bool) $token,
@@ -52,20 +48,55 @@ class CallbackController extends Controller
             return $this->redirectToCoreLogout();
         }
 
-        session([
-            'sarionos_logged_in'             => true,
-            'sarionos_token'                 => $token,
-            'sarionos_user_name'             => $userName,
-            'sarionos_user_uuid'             => $userUuid,
-            'sarionos_role_id'               => $roleId,
-            'sarionos_active_workspace_uuid' => $activeWorkspaceUuid,
-            'sarionos_active_workspace_name' => $activeWorkspaceName,
-            'sarionos_is_workspace_owner'    => $isOwnerBool,
+        /*
+         * The callback establishes authentication only.
+         *
+         * It deliberately does not infer local application
+         * scope from the global SSO workspace payload.
+         * LoadWorkspaceContextFromCore resolves the
+         * registered module through Core and then chooses
+         * Personal / Workspace / System behavior.
+         */
+        session()->forget([
+            'sarionos_active_workspace_uuid',
+            'sarionos_active_workspace_name',
+            'sarionos_is_workspace_owner',
+            'sarionos_workspace_users',
+            'sarionos_workspace_modules',
+            'sarionos_user_workspaces',
+            'sarionos_module_scope',
+            'sarionos_navigation_items',
+            'sarionos_allowed_access_keys',
+            'sarionos_access_route_rules',
+            'sarionos_context_version',
+            'sarionos_context_workspace_uuid',
         ]);
 
-        session()->put('force_refresh_users', true);
-        session()->put('force_refresh_modules', true);
-        session()->put('force_refresh_context', true);
+        session([
+            'sarionos_logged_in' =>
+                true,
+
+            'sarionos_token' =>
+                $token,
+
+            'sarionos_user_name' =>
+                $userName,
+
+            'sarionos_user_uuid' =>
+                $userUuid,
+
+            'sarionos_role_id' =>
+                $roleId,
+
+            'force_refresh_users' =>
+                true,
+
+            'force_refresh_modules' =>
+                true,
+
+            'force_refresh_context' =>
+                true,
+        ]);
 
         return redirect('/dashboard');
     }

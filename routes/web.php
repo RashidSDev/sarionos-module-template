@@ -32,54 +32,104 @@ Route::get('/logout', function (Request $request) {
 })->name('logout');
 
 Route::post('/workspace/switch', function (Request $request) {
+    /*
+     * Core has already resolved this application's scope
+     * before this closure executes.
+     *
+     * Personal/System modules never consume workspace
+     * switching locally.
+     */
+    abort_unless(
+        session('sarionos_module_scope') === 'workspace',
+        404
+    );
+
     $request->validate([
         'workspace_uuid' => ['required', 'uuid'],
     ]);
 
     $token = session('sarionos_token');
+
     if (! $token) {
         return redirect('/logout');
     }
 
-    $core = rtrim(config('sarionos.core_url'), '/');
+    $core = rtrim(
+        (string) config('sarionos.core_url'),
+        '/'
+    );
 
     try {
         $res = \Illuminate\Support\Facades\Http::withToken($token)
             ->acceptJson()
             ->timeout(10)
-            ->post($core . '/api/me/workspace', [
-                'workspace_uuid' => $request->workspace_uuid,
-            ]);
+            ->post(
+                $core . '/api/me/workspace',
+                [
+                    'workspace_uuid' =>
+                        $request->workspace_uuid,
+                ]
+            );
     } catch (\Throwable $e) {
         return back()->withErrors([
-            'workspace_uuid' => 'Unable to switch workspace.',
+            'workspace_uuid' =>
+                'Unable to switch workspace.',
         ]);
     }
 
     if (! $res->ok()) {
-        if (in_array($res->status(), [401, 403], true)) {
+        if (
+            in_array(
+                $res->status(),
+                [401, 403],
+                true
+            )
+        ) {
             return redirect('/logout');
         }
 
         return back()->withErrors([
-            'workspace_uuid' => 'Unable to switch workspace.',
+            'workspace_uuid' =>
+                'Unable to switch workspace.',
         ]);
     }
 
     session([
-        'sarionos_active_workspace_uuid' => $res->json('workspace_uuid'),
-        'sarionos_active_workspace_name' => $res->json('workspace_name'),
-        'force_refresh_users' => true,
-        'force_refresh_modules' => true,
-        'force_refresh_context' => true,
+        'sarionos_active_workspace_uuid' =>
+            $res->json('workspace_uuid'),
+
+        'sarionos_active_workspace_name' =>
+            $res->json('workspace_name'),
+
+        'force_refresh_users' =>
+            true,
+
+        'force_refresh_modules' =>
+            true,
+
+        'force_refresh_context' =>
+            true,
     ]);
 
-    $self = rtrim(config('sarionos.self_url'), '/');
+    $self = rtrim(
+        (string) config('sarionos.self_url'),
+        '/'
+    );
 
     return redirect()->away(
-        $core . '/login?redirect=' . urlencode($self . '/auth/callback?reason=workspace_switched')
+        $core
+        . '/login?redirect='
+        . urlencode(
+            $self
+            . '/auth/callback?reason=workspace_switched'
+        )
     );
-})->middleware('verify.token')->name('workspace.switch');
+})->middleware([
+    'verify.token',
+    'sync.workspace.from.core',
+    'load.workspace.context',
+    'ensure.module.enabled',
+])->name('workspace.switch');
 
 
 Route::middleware([
