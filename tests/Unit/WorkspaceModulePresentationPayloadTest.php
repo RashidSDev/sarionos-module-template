@@ -104,7 +104,7 @@ class WorkspaceModulePresentationPayloadTest extends TestCase
 
         $method = new ReflectionMethod(
             LoadWorkspaceContextFromCore::class,
-            'normalizeWorkspaceModules'
+            'normalizeModules'
         );
 
         $method->setAccessible(true);

@@ -7,14 +7,37 @@ use Illuminate\Http\Request;
 
 class EnsureModuleEnabled
 {
-    public function handle(Request $request, Closure $next)
-    {
-        $moduleKey = config('sarionos.module_key');
-
-        $modules = collect(session('sarionos_workspace_modules', []));
-        $enabled = $modules->contains(
-            fn ($m) => ($m['key'] ?? null) === $moduleKey
+    public function handle(
+        Request $request,
+        Closure $next
+    ) {
+        $moduleKey = trim(
+            (string) config(
+                'sarionos.module_key'
+            )
         );
+
+        /*
+         * Core /api/me/modules is the canonical
+         * entitlement catalogue for Workspace,
+         * Personal and System scopes.
+         */
+        $modules = collect(
+            session(
+                'sarionos_modules',
+                []
+            )
+        );
+
+        $enabled =
+            $modules->contains(
+                fn ($module): bool =>
+                    is_array($module)
+                    && (
+                        $module['key']
+                        ?? null
+                    ) === $moduleKey
+            );
 
         if ($enabled) {
             return $next($request);
@@ -23,6 +46,8 @@ class EnsureModuleEnabled
         session()->forget([
             'sarionos_workspace_users',
             'sarionos_workspace_modules',
+            'sarionos_modules',
+            'sarionos_module_scope',
             'sarionos_user_workspaces',
             'sarionos_navigation_items',
             'sarionos_allowed_access_keys',
@@ -35,6 +60,14 @@ class EnsureModuleEnabled
             'sarionos_core_alive_last_ok',
         ]);
 
-        return redirect()->away(rtrim(config('sarionos.web_url'), '/') . '/dashboard?refresh_context=1');
+        return redirect()->away(
+            rtrim(
+                (string) config(
+                    'sarionos.web_url'
+                ),
+                '/'
+            )
+            . '/dashboard?refresh_context=1'
+        );
     }
 }

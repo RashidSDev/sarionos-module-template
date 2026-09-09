@@ -160,41 +160,125 @@ class VerifyTokenFromCore
             return;
         }
 
-        $cookieWorkspaceUuid = (string) ($payload['workspace_uuid'] ?? '');
-        $cookieWorkspaceName = $payload['workspace_name'] ?? null;
+        /*
+         * Scope is never declared locally.
+         *
+         * Once Core has resolved this module's scope,
+         * Personal/System modules ignore the global
+         * workspace cookie completely.
+         */
+        $effectiveScope =
+            session(
+                'sarionos_module_scope'
+            );
 
-        if ($cookieWorkspaceUuid === '') {
+        if (
+            in_array(
+                $effectiveScope,
+                [
+                    'personal',
+                    'system',
+                ],
+                true
+            )
+        ) {
+            session()->forget([
+                'sarionos_active_workspace_uuid',
+                'sarionos_active_workspace_name',
+                'sarionos_is_workspace_owner',
+                'sarionos_context_workspace_uuid',
+            ]);
+
             return;
         }
 
-        $sessionWorkspaceUuid = (string) session('sarionos_active_workspace_uuid', '');
+        $cookieWorkspaceUuid =
+            trim(
+                (string) (
+                    $payload[
+                        'workspace_uuid'
+                    ]
+                    ?? ''
+                )
+            );
 
-        if ($sessionWorkspaceUuid !== '' && $sessionWorkspaceUuid === $cookieWorkspaceUuid) {
+        $cookieWorkspaceName =
+            $payload[
+                'workspace_name'
+            ]
+            ?? null;
+
+        $sessionWorkspaceUuid =
+            (string) session(
+                'sarionos_active_workspace_uuid',
+                ''
+            );
+
+        if (
+            $sessionWorkspaceUuid
+                === $cookieWorkspaceUuid
+        ) {
             return;
         }
 
         session()->forget([
             'sarionos_workspace_users',
             'sarionos_workspace_modules',
+            'sarionos_modules',
+            'sarionos_module_scope',
             'sarionos_user_workspaces',
+            'sarionos_navigation_items',
+            'sarionos_allowed_access_keys',
+            'sarionos_access_route_rules',
             'sarionos_context_workspace_uuid',
             'sarionos_core_alive_checked_at',
             'sarionos_core_alive_last_ok',
             'sarionos_token_expires_at',
         ]);
 
+        if ($cookieWorkspaceUuid === '') {
+            session()->forget([
+                'sarionos_active_workspace_uuid',
+                'sarionos_active_workspace_name',
+                'sarionos_is_workspace_owner',
+            ]);
+        } else {
+            session([
+                'sarionos_active_workspace_uuid' =>
+                    $cookieWorkspaceUuid,
+
+                'sarionos_active_workspace_name' =>
+                    $cookieWorkspaceName,
+            ]);
+        }
+
         session([
-            'sarionos_active_workspace_uuid' => $cookieWorkspaceUuid,
-            'sarionos_active_workspace_name' => $cookieWorkspaceName,
-            'force_refresh_context'          => true,
-            'force_refresh_users'            => true,
-            'force_refresh_modules'          => true,
+            'force_refresh_context' =>
+                true,
+
+            'force_refresh_users' =>
+                true,
+
+            'force_refresh_modules' =>
+                true,
         ]);
 
-        Log::info('[MODULE][VerifyTokenFromCore] workspace changed from workspace context cookie', [
-            'old_workspace_uuid' => $sessionWorkspaceUuid,
-            'new_workspace_uuid' => $cookieWorkspaceUuid,
-        ]);
+        Log::info(
+            '[MODULE][VerifyTokenFromCore] workspace context changed',
+            [
+                'old_workspace_uuid' =>
+                    $sessionWorkspaceUuid
+                    !== ''
+                        ? $sessionWorkspaceUuid
+                        : null,
+
+                'new_workspace_uuid' =>
+                    $cookieWorkspaceUuid
+                    !== ''
+                        ? $cookieWorkspaceUuid
+                        : null,
+            ]
+        );
     }
 
     private function coreTokenIsAlive(string $token): bool|null

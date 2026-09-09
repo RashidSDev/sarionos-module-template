@@ -8,27 +8,85 @@ use Illuminate\Support\Facades\Log;
 
 class SyncWorkspaceFromCore
 {
-    public function handle(Request $request, Closure $next)
-    {
-        if ($request->is('logout') || $request->is('auth/callback')) {
+    public function handle(
+        Request $request,
+        Closure $next
+    ) {
+        if (
+            $request->is('logout')
+            || $request->is('auth/callback')
+        ) {
             return $next($request);
         }
 
-        $activeWorkspaceUuid = (string) session('sarionos_active_workspace_uuid', '');
+        /*
+         * Core is the only scope authority.
+         *
+         * If Core previously resolved this module as
+         * Personal/System, local workspace context is
+         * irrelevant and is removed.
+         */
+        $effectiveScope =
+            session(
+                'sarionos_module_scope'
+            );
 
-        if ($activeWorkspaceUuid === '') {
-            return redirect('/logout');
+        if (
+            in_array(
+                $effectiveScope,
+                [
+                    'personal',
+                    'system',
+                ],
+                true
+            )
+        ) {
+            session()->forget([
+                'sarionos_active_workspace_uuid',
+                'sarionos_active_workspace_name',
+                'sarionos_is_workspace_owner',
+                'sarionos_workspace_users',
+                'sarionos_user_workspaces',
+                'sarionos_context_workspace_uuid',
+            ]);
+
+            return $next($request);
         }
 
-        $contextWorkspaceUuid = (string) session('sarionos_context_workspace_uuid', '');
+        /*
+         * Before Core has resolved the scope there is
+         * deliberately no workspace requirement here.
+         */
+        $activeWorkspaceUuid =
+            (string) session(
+                'sarionos_active_workspace_uuid',
+                ''
+            );
 
-        $workspaceChanged = $contextWorkspaceUuid !== $activeWorkspaceUuid;
-        $manualRefresh = $request->boolean('refresh_context');
+        $contextWorkspaceUuid =
+            (string) session(
+                'sarionos_context_workspace_uuid',
+                ''
+            );
 
-        if ($workspaceChanged || $manualRefresh) {
+        $workspaceChanged =
+            $contextWorkspaceUuid
+                !== $activeWorkspaceUuid;
+
+        $manualRefresh =
+            $request->boolean(
+                'refresh_context'
+            );
+
+        if (
+            $workspaceChanged
+            || $manualRefresh
+        ) {
             session()->forget([
                 'sarionos_workspace_users',
                 'sarionos_workspace_modules',
+                'sarionos_modules',
+                'sarionos_module_scope',
                 'sarionos_user_workspaces',
                 'sarionos_navigation_items',
                 'sarionos_allowed_access_keys',
@@ -37,21 +95,38 @@ class SyncWorkspaceFromCore
             ]);
 
             session([
-                'force_refresh_users' => true,
-                'force_refresh_modules' => true,
-                'force_refresh_context' => true,
-                'sarionos_context_workspace_uuid' => $activeWorkspaceUuid,
+                'force_refresh_users' =>
+                    true,
+
+                'force_refresh_modules' =>
+                    true,
+
+                'force_refresh_context' =>
+                    true,
+
+                'sarionos_context_workspace_uuid' =>
+                    $activeWorkspaceUuid,
             ]);
 
-            Log::info('[MODULE][SyncWorkspaceFromCore] LOCAL CONTEXT MARKED FOR REFRESH', [
-                'active_workspace_uuid' => $activeWorkspaceUuid,
-                'context_workspace_uuid' => $contextWorkspaceUuid,
-                'refresh_context' => $manualRefresh,
-                'reasons' => array_values(array_filter([
-                    $workspaceChanged ? 'context_workspace_mismatch' : null,
-                    $manualRefresh ? 'request_refresh_context' : null,
-                ])),
-            ]);
+            Log::info(
+                '[MODULE][SyncWorkspaceFromCore] CONTEXT MARKED FOR REFRESH',
+                [
+                    'active_workspace_uuid' =>
+                        $activeWorkspaceUuid
+                        !== ''
+                            ? $activeWorkspaceUuid
+                            : null,
+
+                    'context_workspace_uuid' =>
+                        $contextWorkspaceUuid
+                        !== ''
+                            ? $contextWorkspaceUuid
+                            : null,
+
+                    'refresh_context' =>
+                        $manualRefresh,
+                ]
+            );
         }
 
         return $next($request);
