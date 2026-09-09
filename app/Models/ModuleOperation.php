@@ -9,6 +9,7 @@ class ModuleOperation extends Model
 {
     protected $fillable = [
         'uuid',
+        'scope_type',
         'workspace_uuid',
         'created_by_user_uuid',
         'operation_type',
