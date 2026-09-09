@@ -358,7 +358,7 @@ class ModuleSystemCheckController extends Controller
 
         return redirect()
             ->route(
-                'template.admin.system-check'
+                'module.admin.system-check'
             )
             ->with(
                 'status',

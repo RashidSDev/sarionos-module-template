@@ -22,7 +22,21 @@ return [
 
     'lottery' => [2, 100],
 
-    'cookie' => env('SESSION_COOKIE', 'sarionos_template_session'),
+    'cookie' => env(
+        'SESSION_COOKIE',
+        'sarionos_'
+            . preg_replace(
+                '/[^a-z0-9_]+/i',
+                '_',
+                strtolower(
+                    (string) env(
+                        'SARIONOS_MODULE_KEY',
+                        'module'
+                    )
+                )
+            )
+            . '_session'
+    ),
 
     'path' => env('SESSION_PATH', '/'),
 

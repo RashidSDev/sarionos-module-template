@@ -10,7 +10,7 @@
             </h1>
 
             <p class="mt-2 text-sm text-gray-500">
-                You do not have permission to open this Template area in the current workspace.
+                You do not have permission to open this application area.
             </p>
 
             <div class="mt-6 flex flex-col justify-center gap-2 sm:flex-row">

@@ -57,7 +57,7 @@ class AccessRouteRegistryController extends Controller
         }
 
         return redirect()
-            ->route('template.admin.access-routes.index')
+            ->route('module.admin.access-routes.index')
             ->with('status', 'Selected routes registered with Core.');
     }
 

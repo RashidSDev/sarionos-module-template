@@ -59,7 +59,7 @@
             </div>
 
             <a
-                href="{{ route('template.admin.access-routes.index') }}"
+                href="{{ route('module.admin.access-routes.index') }}"
                 class="inline-flex items-center justify-center rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-gray-800"
             >
                 Access Routes

@@ -4,7 +4,7 @@
             <div>
                 <h1 class="text-lg font-semibold text-gray-900">Access Route Registry</h1>
                 <p class="mt-1 text-sm text-gray-500">
-                    Local Module Template routes are compared with Core registered access route rules.
+                    Local module routes are compared with Core registered access route rules.
                 </p>
             </div>
 
@@ -25,7 +25,7 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('template.admin.access-routes.register') }}" class="rounded-xl border border-gray-200 bg-white shadow-sm">
+        <form method="POST" action="{{ route('module.admin.access-routes.register') }}" class="rounded-xl border border-gray-200 bg-white shadow-sm">
             @csrf
 
             <div class="flex flex-wrap items-center justify-between gap-4 border-b border-gray-200 px-4 py-3">

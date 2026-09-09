@@ -69,7 +69,7 @@
                         {{ $allOk ? 'All required checks passed.' : 'Some checks need attention.' }}
                     </div>
 
-                    <form method="POST" action="{{ route('template.admin.system-check.heartbeat') }}">
+                    <form method="POST" action="{{ route('module.admin.system-check.heartbeat') }}">
                         @csrf
 
                         <button

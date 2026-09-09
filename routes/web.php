@@ -7,7 +7,7 @@ use App\Http\Controllers\Admin\AccessRouteRegistryController;
 use App\Http\Controllers\ModuleSystemCheckController;
 
 Route::get('/whoami', function () {
-    return 'MODULE TEMPLATE';
+    return strtoupper((string) config('sarionos.module_name', 'SarionOS Module'));
 });
 
 Route::get('/', function () {
@@ -27,7 +27,7 @@ Route::get('/logout', function (Request $request) {
         )
     )
     ->withCookie(cookie()->forget('sarionos_sso', '/', config('sarionos.cookie_domain')))
-    ->withCookie(cookie()->forget(env('SESSION_COOKIE', 'sarionos_template_session'), '/', config('sarionos.cookie_domain')))
+    ->withCookie(cookie()->forget(config('session.cookie'), '/', config('sarionos.cookie_domain')))
     ->withCookie(cookie()->forget('XSRF-TOKEN', '/', config('sarionos.cookie_domain')));
 })->name('logout');
 
@@ -144,14 +144,14 @@ Route::middleware([
     })->name('dashboard');
 
     Route::get('/admin/system-check', [ModuleSystemCheckController::class, 'index'])
-        ->name('template.admin.system-check');
+        ->name('module.admin.system-check');
 
     Route::post('/admin/system-check/queue-heartbeat', [ModuleSystemCheckController::class, 'heartbeat'])
-        ->name('template.admin.system-check.heartbeat');
+        ->name('module.admin.system-check.heartbeat');
 
     Route::get('/admin/access-routes', [AccessRouteRegistryController::class, 'index'])
-        ->name('template.admin.access-routes.index');
+        ->name('module.admin.access-routes.index');
 
     Route::post('/admin/access-routes/register', [AccessRouteRegistryController::class, 'register'])
-        ->name('template.admin.access-routes.register');
+        ->name('module.admin.access-routes.register');
 });
