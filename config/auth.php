@@ -7,24 +7,30 @@
 |
 | Core is the sole SarionOS identity and SSO authority.
 |
-| Capability modules receive trusted Core identity/context data through the
-| SarionOS integration contract. They do not own local Laravel users, guards,
-| user providers or password-reset brokers.
-|
-| AppServiceProvider also clears Laravel 12's merged framework auth defaults
-| during application registration.
+| Laravel requires a valid default guard while persisting database sessions.
+| The module therefore keeps a framework-compatible session guard backed by
+| a provider that never resolves or authenticates a local user.
 |
 */
 
 return [
     'defaults' => [
-        'guard' => null,
+        'guard' => env('AUTH_GUARD', 'web'),
         'passwords' => null,
     ],
 
-    'guards' => [],
+    'guards' => [
+        'web' => [
+            'driver' => 'session',
+            'provider' => 'sarionos_null_users',
+        ],
+    ],
 
-    'providers' => [],
+    'providers' => [
+        'sarionos_null_users' => [
+            'driver' => 'sarionos_null',
+        ],
+    ],
 
     'passwords' => [],
 

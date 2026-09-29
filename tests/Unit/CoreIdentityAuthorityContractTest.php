@@ -6,7 +6,7 @@ use Tests\TestCase;
 
 class CoreIdentityAuthorityContractTest extends TestCase
 {
-    public function test_template_has_no_local_laravel_user_authority(): void
+    public function test_template_uses_null_framework_guard_without_local_user_authority(): void
     {
         $this->assertFileDoesNotExist(
             app_path('Models/User.php')
@@ -16,7 +16,8 @@ class CoreIdentityAuthorityContractTest extends TestCase
             database_path('factories/UserFactory.php')
         );
 
-        $this->assertNull(
+        $this->assertSame(
+            'web',
             config('auth.defaults.guard')
         );
 
@@ -24,9 +25,24 @@ class CoreIdentityAuthorityContractTest extends TestCase
             config('auth.defaults.passwords')
         );
 
-        $this->assertSame([], config('auth.guards'));
-        $this->assertSame([], config('auth.providers'));
+        $this->assertSame([
+            'web' => [
+                'driver' => 'session',
+                'provider' => 'sarionos_null_users',
+            ],
+        ], config('auth.guards'));
+
+        $this->assertSame([
+            'sarionos_null_users' => [
+                'driver' => 'sarionos_null',
+            ],
+        ], config('auth.providers'));
+
         $this->assertSame([], config('auth.passwords'));
+
+        $this->assertNull(
+            auth()->guard('web')->user()
+        );
     }
 
     public function test_template_seeder_does_not_create_local_users(): void
